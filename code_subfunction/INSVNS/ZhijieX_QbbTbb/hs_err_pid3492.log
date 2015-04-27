@@ -1,0 +1,48 @@
+#
+# An unexpected error has been detected by Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x79b37fd3, pid=3492, tid=4972
+#
+# Java VM: Java HotSpot(TM) Client VM (11.2-b01 mixed mode windows-x86)
+# Problematic frame:
+# V  [jvm.dll+0x57fd3]
+#
+# If you would like to submit a bug report, please visit:
+#   http://java.sun.com/webapps/bugreport/crash.jsp
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x046b6800):  JavaThread "main" [_thread_in_vm, id=4972, stack(0x00430000,0x00c30000)]
+
+siginfo: ExceptionCode=0xc0000005, reading address 0xfffffffc
+
+Registers:
+EAX=0x00000000, EBX=0x00000000, ECX=0x00000000, EDX=0x004319b0
+ESP=0x0043197c, EBP=0x00000000, ESI=0x004319b0, EDI=0x00000400
+EIP=0x79b37fd3, EFLAGS=0x00210246
+
+Top of Stack: (sp=0x0043197c)
+0x0043197c:   004319b0 79b387a6 00000000 00000000
+0x0043198c:   00000000 79bad855 004319b0 0325dfec
+0x0043199c:   0325dfec 00431d20 00431c5c 00009fa0
+0x004319ac:   00000000 00000000 7c31cdb8 00000020
+0x004319bc:   00f901ac 00000000 00000000 235525c0
+0x004319cc:   08e00290 22f6c382 00431968 032565c0
+0x004319dc:   0325dbd0 0325dbd8 0325dfc4 00000400
+0x004319ec:   0325e008 0945e348 0945e360 0945e3f0 
+
+Instructions: (pc=0x79b37fd3)
+0x79b37fc3:   04 56 8b f1 8b 4c 24 0c 89 06 89 46 14 89 4e 10
+0x79b37fd3:   8b 40 fc 50 89 46 04 e8 91 09 02 00 83 c4 04 85 
+
+
+Stack: [0x00430000,0x00c30000],  sp=0x0043197c,  free space=6k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x57fd3]
+
+[error occurred during error reporting (printing native stack), id 0xc0000005]
+
+
+---------------  P R O C E S S  ---------------
+

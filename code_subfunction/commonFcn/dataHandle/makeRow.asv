@@ -1,0 +1,42 @@
+% buaa xyz 2014.1.8
+
+% 使数组行存储/列存储
+
+function new = makeRow(old,format,n)
+
+%%　输入
+% format：格式
+% n：（可选输入）数据分量个数（当数据分量个数大于时刻数是必须指定）
+
+if ~strcmp(format,'列为时') && ~strcmp(format,'行为时')
+   errordlg('请指定格式') 
+   return
+end
+if strcmp(format,'列为时')
+    % 使为 一列一个时刻
+    new = old ;
+    if exist('n','var')
+       momentNum = n;       % 分量个数
+    else
+        momentNum = length(old);
+    end
+    if size(old,1)>momentNum
+       new = old'; 
+    end
+else
+    new = old ;
+    if exist('n','var')
+       momentNum = n;       % 分量个数
+    else
+        momentNum = length(old);
+    end
+    if size(old,1)>momentNum
+       new = old'; 
+    end
+end
+% 使数据为列存储 ：一列一个时刻，正常时 行数<列数(时刻数)
+
+
+
+
+    

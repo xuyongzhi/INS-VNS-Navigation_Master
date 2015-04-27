@@ -1,0 +1,24 @@
+此特征点提取和匹配函数算法源于 siftDemoV4,原文件中包含VC++和MATLAB两个独立的版本，先只包含MATLAB版
+
+siftDemoV4_main 为主函数，可共调用，也可独立运行，实现提取指定文件中的所有图片的跟踪匹配成功的特征点。
+
+独立运行特征点提取函数的方法：清空全局变量，在基本工作空间中调用 siftDemoV4(0/1)
+
+ 【MATLAB版各函数说明】
+网络程序包中的四个程序：
+1）function [image, descriptors, locs] = sift(imageFile)
+	输入一副图像(imageFile)[例1040*1392]
+	输出 	1>image：这幅图像[例1040*1392]
+		2>descriptors：sift参数[例2391*128]
+		2>locs：sift特征点坐标[例2391*4]前两列是像素坐标
+2）function im = appendimages(image1, image2)
+	输入两幅图，输出一副这两幅图的叠加图
+3）function showkeys(image, locs)
+ This function displays an image with SIFT keypoints overlayed.
+   Input parameters:
+     image: the file name for the image (grayscale)
+     locs: matrix in which each row gives a keypoint location (row,
+           column, scale, orientation)
+4）siftWin32
+
+  

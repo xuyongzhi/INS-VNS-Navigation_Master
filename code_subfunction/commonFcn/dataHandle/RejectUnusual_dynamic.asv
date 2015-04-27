@@ -1,0 +1,42 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                           xyz
+%                        2014.3.2
+%              剔除动态数据的异常噪声，并将数据平滑
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 输入
+% old_data：原始数据。spanTime：平滑采样长度。maxAbsError：最大误差限（单位与输入数据一致）
+function new_data = RejectUnusualSmooth_dynamic( old_data,spanTime,maxAbsError )
+%% 思路：
+%（1）将数据最小二乘线性平滑
+%（2）以平滑后的值为准确值，删去远离准确值超过 maxAbsError 的数据
+%（3）再次对去除异常的数据进行最小二乘线性平滑
+
+%% （1）一次平滑
+span = spanTime*100 ;
+smooth_data = zeros(size(old_data));
+tic
+smooth_data(1,:) = smooth(old_data(1,:),span,'rlowess');
+disp('第一次平滑处理 第一行用时：')
+toc
+smooth_data(2,:) = smooth(old_data(2,:),span,'rlowess');
+smooth_data(3,:) = smooth(old_data(3,:),span,'rlowess');
+
+%% （2）去除异常
+    %% 第一次
+L = length(old_data);
+first_maxAbsError = maxAbsError ;
+errorNum = 0;
+for k=1:L
+    error = abs(smooth_data(:,k-errorNum)-old_data(:,k-errorNum));
+    compare = error>first_maxAbsError ;
+    if sum(compare)>0
+       % old_data(:,k-errorNum)中存在误差超限的数据
+       errorNum = errorNum+1 ;
+       old_data(:,k-errorNum) = [];
+       smooth_data(:,k-errorNum) = [];       
+    end    
+end
+springtf('第一次删除异常数据个数：%d(%0.2f%%)\n',errorNum,errorNum/L*100)
+
+%% 对剔除异常后的数据进行平滑
+

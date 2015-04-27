@@ -1,0 +1,47 @@
+% 从地球大地坐标系（经纬度）到地球直角坐标系下的转换（米）
+% 经纬极坐标系 
+
+% 输入 position
+%   position(1)：经度（rad）
+%   position(2)：纬度（rad）
+%   position(3)：高度(m)
+% 输出 P (m)
+
+function P = FJWtoZJ(position,planet)
+format long
+if ~exist('planet','var')
+   errordlg('未输入所在星体(Fdtoe)')
+   P=[];
+   return;
+else
+    if ~strcmp(planet,'e') && ~strcmp(planet,'m')
+        errordlg('planet参数不对(Fdtoe)')
+        P=[];
+        return;
+    end
+end
+if strcmp(planet,'e')
+    earthConst = getEarthConst;
+    e = earthConst.e ;
+    Ra = earthConst.Re ;
+else
+    moonConst = getMoonConst;
+    e = moonConst.e ;   % 月球扁率
+    Ra = moonConst.Rm ;  % 月球椭球长轴半径，m
+end
+
+
+% 所在位置
+longitude = position(1); % 经度/弧度
+latitude = position(2);  
+h = position(3);  % 高度，m
+
+RN = Ra*(1-e^2)/(1-e^2*sin(latitude)^2)^(3/2) ; % 子午面主曲率半径
+RE = Ra/(1-e^2*sin(latitude)^2)^(1/2) ; % 横向主曲率半径
+R0 = sqrt(RE*RN); % 平均主曲率半径
+
+x = (R0 + h) * cos(latitude) * cos(longitude);
+y = (R0 + h) * cos(latitude) * sin(longitude);
+z = (R0  + h) * sin(latitude);
+
+P = [x;y;z];

@@ -1,0 +1,247 @@
+%************************************************************************/
+%*                                                                      */
+%*                    < IMU数据补偿 处理模块 >                           */
+%*                                                                      */
+%*                        原版本作者：杨胜                               */
+%*                        改版作者：康泰钟                               */
+%*						  编制日期: 2009-11           					 */
+%************************************************************************/
+
+%*************************  程序说明  ***********************************/
+%   程序功能：
+%       光纤IMU数据补偿。输入原始IMU数据，经过该程序处理后，输出三轴角速度和三轴加速度
+%
+%   程序输入输出及单位规定：
+%       输入三轴加速度计的脉冲信号和三轴陀螺的脉冲信号（单位：^——即脉冲数）
+%       输出相对于IMU基准面的三个正交轴x,y,z轴的角速度和加速度（角速度：o/h； 加速度：g）
+%
+%
+%
+%   程序说明：
+%             1）该程序中包含光纤98系统标定结果
+%             2）标定结果中包含以下信息：
+%                   % 1.加计
+%                      % 加计偏置
+%                      % 加计标度因数
+%                      % 加计安装误差
+%                   % 2.陀螺
+%                      % 陀螺常值漂移
+%                      % 陀螺标度因数
+%                      % 陀螺安装误差
+% 
+%   使用说明： 
+%
+%   程序中的符号说明：
+%
+%
+%   程序中的问题：
+%
+%
+%
+%*************************  程序说明  ***********************************/
+
+function compensition()
+clc
+clear all
+close all
+disp('未进行温度补偿');
+format long;
+
+% 0. 程序功能设定
+    % 0.1 零偏校正（利用双位置对准结果）
+CorrectBias = 0;
+if CorrectBias
+    bias_gyro = [0.011691, 0.056850, -0.206671]'; % 单位：度/小时
+    bias_acc = [0.000285, -0.000135, 0.000266]'; % 单位：g
+else
+    bias_gyro = [0, 0, 0]'; % 单位：度/小时
+    bias_acc = [0, 0, 0]'; % 单位：g
+end
+
+% 1. 待补偿数据载入
+[fname,dirpath] = uigetfile('*.txt');
+sourcename=[dirpath fname]
+imu_data = load(sourcename);
+
+n = length(imu_data(:,1))
+% 2. 参数设定
+    % 数据采集频率
+FRE=100;
+
+% 3. 加计参数(按标定结果填入)
+
+    % 标定参数数据载入
+    
+%     IMU_Param = load('F:\A1系统\2011-01-20第一套激光POS全温标定\2011年1月19日（20°）\CaliResult\CaliRlt_and_SelfChk.dat');
+    
+%         IMU_Param = load('F:\A2系统\2011-02-23_26-全温标定\20度\CaliResult\CaliRlt_and_SelfChk.dat');
+% IMU_Param = load('D:\标定参数\2011-02-23_26，A2全温标定结果\20\CaliResult\CaliRlt_and_SelfChk.dat');
+%     IMU_Param = load('F:\A1系统\2011-04-23_26全温标定（A1系统重新更换陀螺后）\20度\CaliResult\CaliRlt_and_SelfChk.dat');
+%     IMU_Param = load('F:\A3系统\2011-02-28-自研激光A3-全温标定\20度\CaliResult\CaliRlt_and_SelfChk.dat');
+    
+IMU_Param = load('E:\惯性视觉导航\数据\数据补偿程序\CaliResult20\CaliRlt_and_SelfChk.dat');
+
+    
+    % 三个加计的零偏，单位：g(按标定结果填入)
+    K0x =  IMU_Param(1,1);
+	K0y =  IMU_Param(1,2);
+	K0z =  IMU_Param(1,3);
+    
+    % 三个加计的标度因数的倒数，单位：1/(^/s/g) (按标定结果填入)
+    K1x_ = IMU_Param(2,1);
+	K1y_ = IMU_Param(2,2);
+	K1z_ = IMU_Param(2,3);
+    
+    % 三个加计的安装误差阵(按标定结果填入)
+    K = IMU_Param(3:5,:);
+	K_ = inv(K);
+    
+% 4. 陀螺参数(按标定结果填入)
+
+    % 三个陀螺的零偏,单位: o/h
+	E0x = IMU_Param(6,1);
+	E0y = IMU_Param(6,2);
+	E0z = IMU_Param(6,3);
+
+    % 陀螺标度因数的倒数,单位: "/^
+	E1x_ = IMU_Param(7,1);
+	E1y_ = IMU_Param(7,2);
+	E1z_ = IMU_Param(7,3);
+    
+    % 陀螺安装误差(按标定结果填入)
+    E  = IMU_Param(8:10,:);
+	E_ = inv(E);
+    
+    % 与g有关项阵,单位: o/h/g
+	D = IMU_Param(11:13,:);
+
+% 5. 为补偿结果分配存储空间
+fbx = zeros(1,n);
+fby = zeros(1,n);
+fbz = zeros(1,n);
+gx = zeros(1,n);
+gy = zeros(1,n);
+gz = zeros(1,n);
+index = zeros(1,n);
+timeline = zeros(1,n);
+
+% 6. 补偿加速度和角速度
+for i=1 : n
+    % 补偿得到载体系三个方向的加速度
+        % 补偿得到三个加速度计方向的加速度
+    tmpa=[  imu_data(i,6)*FRE*K1x_ - K0x;
+            imu_data(i,7)*FRE*K1y_ - K0y;
+            imu_data(i,8)*FRE*K1z_ - K0z;
+         ];
+        % 补偿得到相对IMU基准面的三轴正交的加速度
+    tempa = K_*tmpa;
+    fbx(i)=tempa(1) - bias_acc(1);
+    fby(i)=tempa(2) - bias_acc(2);
+    fbz(i)=tempa(3) - bias_acc(3);
+    
+    % 补偿得到载体系三个方向的角速度
+        % 计算得到与g有关项误差
+    tmpa_w = D*tempa;
+        % 补偿得到三个陀螺方向的角速度，单位：o/h（备注: "/s = o/h）
+    tmpw=[  imu_data(i,3)*FRE*E1x_-E0x; 
+            imu_data(i,4)*FRE*E1y_-E0y;
+            imu_data(i,5)*FRE*E1z_-E0z;
+         ];
+        % 补偿得到相对IMU基准面的三轴正交的角速度
+    tempw = E_*tmpw;
+    gx(i) = tempw(1) - bias_gyro(1);
+    gy(i) = tempw(2) - bias_gyro(2);
+    gz(i) = tempw(3) - bias_gyro(3);
+    
+    % 记录每组数据的标号和时间点信息
+    index(i) = imu_data(i,1);
+%     if i>1
+%         if imu_data(i,2)-imu_data(i-1,2)>1009 &imu_data(i,2)-imu_data(i-1,2)<1011%
+%             imu_data(i,2)=imu_data(i,2)-1000;
+%         end
+%     end
+    timeline(i) = imu_data(i,2);
+end 
+
+% 7. 将补偿结果存入文件
+
+% clear imu_data;
+% 
+% fid = fopen(strcat(sourcename(1:(length(sourcename)-4)), 'T35.dat'),'w');
+% 
+% for i=1:n
+%     fprintf(fid,'%8d  %15.5f  %20.10f  %20.10f  %20.10f  %20.10f  %20.10f  %20.10f\n',index(i),timeline(i)-12.5,gx(i),gy(i),gz(i),fbx(i),fby(i),fbz(i));
+% end;
+% fclose(fid);
+
+%% xyz 加
+f = [fbx;fby;fbz];
+wib = [gx;gy;gz];
+
+newFilePath = [dirpath,fnameOnly];
+if isdir(newFilePath)
+    delete([newFilePath,'\*']);
+else
+   mkdir(newFilePath); 
+end
+
+figure('name','加计-x');
+plot(timeline,fbx);
+title('加计-x');
+saveas(gcf,[newFilePath,'\加计-x.fig']);
+
+figure('name','加计-y');
+plot(timeline,fby);
+title('加计-y');
+saveas(gcf,[newFilePath,'\加计-y.fig']);
+
+figure('name','加计-z');
+plot(timeline,fbz);
+title('加计-z');
+saveas(gcf,[newFilePath,'\加计-z.fig']);
+
+figure('name','陀螺-x');
+plot(timeline,gx);
+title('陀螺-x');
+saveas(gcf,[newFilePath,'\陀螺-x.fig']);
+
+figure('name','陀螺-y');
+plot(timeline,gy);
+title('陀螺-y');
+saveas(gcf,[newFilePath,'\陀螺-y.fig']);
+
+figure('name','陀螺-z');
+plot(timeline,gz);
+title('陀螺-z');
+saveas(gcf,[newFilePath,'\陀螺-z.fig']);
+%%
+earth_const = getEarthConst();
+g = earth_const.g0 ;
+wie_c = earth_const.wie ;
+
+f = f*g;
+wib = wib*pi/180*3600 ;
+
+imuInputData.f = f;
+imuInputData.wib = wib;
+
+assignin('base','imuInputData',imuInputData);
+
+
+
+save([newFilePath,'\imuInputData.mat'],'imuInputData');
+
+disp('数据保存OK');
+
+
+
+% 
+% figure('name','加计');
+% plot(timeline,f);
+% title('加计');
+% legend({'x','y','z'});
+% 
+% figure('name','陀螺');
+% plot(timeline,wib);
+% title('陀螺');
+% legend({'x','y','z'});

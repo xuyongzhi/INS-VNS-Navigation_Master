@@ -1,0 +1,43 @@
+%% SINS力学方程（直接模型）
+% 输入 X = (q,r,v,gyro,acc,q_last,r_last)
+    % r:SINS解算导航系-世界坐标系  wirr,gr：,    IMU数据：wibb,fb
+% 输出 dXdt（X的导数）
+% 增广与不增广的都可以
+
+function dXdt = dXdt_ZhiJie(X,wirr,gr,wibb,fb)
+
+dXdt = zeros(size(X));      % 增广与不增广的都可以
+
+Qrb = X(1:4);
+r = X(5:7);
+v = X(8:10);
+gyro_const = X(11:13);
+acc_const = X(14:16);
+
+Crb = FQtoCnb(Qrb);
+Wrbb = wibb-gyro_const-Crb*wirr ;
+% Wrbb = wibb-Crb*wirr ;
+Wrbb_Q = [0;Wrbb];
+% dqdt = QuaternionMultiply(Qrb,Wrbb_Q)/2;
+
+% Qrb_new = Qrb+dqdt*T ;
+ dqdt=0.5*[      0    ,-Wrbb(1,1),-Wrbb(2,1),-Wrbb(3,1);
+                Wrbb(1,1),     0    , Wrbb(3,1),-Wrbb(2,1);
+                Wrbb(2,1),-Wrbb(3,1),     0    , Wrbb(1,1);
+                Wrbb(3,1), Wrbb(2,1),-Wrbb(1,1),     0    ]*Qrb;
+
+drdt = v;
+
+dvdt = Crb'*(fb-acc_const)-2*getCrossMarix(wirr)*v+gr ;
+
+
+dXdt(1:4) = dqdt;
+dXdt(5:7) = drdt;
+dXdt(8:10) = dvdt;
+
+% if length(X)>16
+%    % 增广的状态
+%    q_last = X(17:20);
+%    r_last = X(21:23);
+%    
+% end

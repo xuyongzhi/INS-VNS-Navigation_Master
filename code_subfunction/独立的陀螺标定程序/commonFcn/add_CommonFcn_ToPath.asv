@@ -1,0 +1,8 @@
+% buaa xyz 2014.1.13
+
+% 将 commonFcn 中的各个文件夹加入搜索路径中
+
+addPath([pwd,'\ResultDisplay'])
+addPath([pwd,'\elmat'])
+addPath([pwd,'\ResultDisplay'])
+addPath([pwd,'\ResultDisplay'])
