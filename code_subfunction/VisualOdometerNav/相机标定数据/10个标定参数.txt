@@ -1,3 +1,0 @@
-T,alpha_c_left,alpha_c_right,cc_left,cc_right,fc_left,fc_right,kc_left,kc_right,om
-
-save Calib_Results_stereo_cur    T alpha_c_left alpha_c_right cc_left cc_right fc_left fc_right kc_left kc_right om
